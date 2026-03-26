@@ -471,7 +471,7 @@ const styles = {
   },
   progressRow: {
     display: 'grid',
-    gridTemplateColumns: '120px 1fr',
+    gridTemplateColumns: '98px 1fr 98px',
     alignItems: 'center',
     marginTop: '20px',
   },
@@ -484,7 +484,7 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'column',
-    flexShrink: 0,
+    justifySelf: 'start',
   },
   progressValue: {
     fontSize: '24px',
@@ -497,11 +497,11 @@ const styles = {
     marginTop: '2px',
   },
   progressInfo: {
+    gridColumn: 2,
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'center',
     textAlign: 'center',
-    marginRight: '120px',
   },
   progressHeadline: {
     fontSize: '18px',
