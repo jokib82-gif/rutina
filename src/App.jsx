@@ -471,15 +471,10 @@ const styles = {
   },
   progressRow: {
     display: 'grid',
-    gridTemplateColumns: '98px auto',
+    gridTemplateColumns: '98px 1fr',
     alignItems: 'center',
-    justifyContent: 'center',
-    columnGap: '22px',
+    gap: '16px',
     marginTop: '20px',
-    width: 'fit-content',
-    maxWidth: '100%',
-    marginLeft: 'auto',
-    marginRight: 'auto',
   },
   progressCircle: {
     width: '98px',
@@ -509,6 +504,7 @@ const styles = {
     justifyContent: 'center',
     alignItems: 'flex-start',
     textAlign: 'left',
+    paddingLeft: '6px',
   },
   progressHeadline: {
     fontSize: '18px',
