@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 const initialHabits = [];
 
@@ -24,7 +24,6 @@ export default function App() {
   const [childName, setChildName] = useState(() => localStorage.getItem('childName') || 'Stjarnan mín');
   const [showCelebration, setShowCelebration] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
-
   const [routineNotes, setRoutineNotes] = useState(() => {
     const saved = localStorage.getItem('routineNotes');
     return saved ? JSON.parse(saved) : { morgun: '', kvöld: '' };
@@ -52,20 +51,16 @@ export default function App() {
     return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
   }, []);
 
-    useEffect(() => {
+  const completedCount = habits.filter((habit) => habit.done).length;
+  const progress = habits.length ? Math.round((completedCount / habits.length) * 100) : 0;
+
+  useEffect(() => {
     if (habits.length > 0 && completedCount === habits.length) {
       setShowCelebration(true);
       const timer = window.setTimeout(() => setShowCelebration(false), 4200);
       return () => window.clearTimeout(timer);
     }
   }, [completedCount, habits.length]);
-
-  const installApp = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
-  };
 
   const morningHabits = useMemo(
     () => habits.filter((habit) => habit.time === 'morgun'),
@@ -76,9 +71,6 @@ export default function App() {
     () => habits.filter((habit) => habit.time === 'kvöld'),
     [habits]
   );
-
-  const completedCount = habits.filter((habit) => habit.done).length;
-  const progress = habits.length ? Math.round((completedCount / habits.length) * 100) : 0;
 
   const toggleHabit = (id) => {
     setHabits((current) =>
@@ -124,6 +116,13 @@ export default function App() {
       ...current,
       [time]: text,
     }));
+  };
+
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
   };
 
   const rewardMessage =
@@ -180,148 +179,166 @@ export default function App() {
   );
 
   return (
-    <div style={styles.page}>
-      <div style={styles.wrapper}>
-        <section style={styles.profileCard}>
-          <div style={styles.profileTopRow}>
-            <div>
-              <div style={styles.profileLabel}>Lítil meistari dagsins</div>
-              <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
-            </div>
-            <div style={styles.starBadge}>{renderRewardStars()}</div>
-          </div>
+    <>
+      <style>{`
+        @keyframes fall {
+          0% { transform: translateY(-10vh) rotate(0deg); opacity: 0; }
+          10% { opacity: 1; }
+          100% { transform: translateY(110vh) rotate(360deg); opacity: 0.9; }
+        }
 
-          <div style={styles.profileControls}>
+        @keyframes popIn {
+          0% { transform: scale(0.9); opacity: 0; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+      `}</style>
+
+      <div style={styles.page}>
+        <div style={styles.wrapper}>
+          <section style={styles.profileCard}>
+            <div style={styles.profileTopRow}>
+              <div>
+                <div style={styles.profileLabel}>Lítil meistari dagsins</div>
+                <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
+              </div>
+              <div style={styles.starBadge}>{renderRewardStars()}</div>
+            </div>
+
+            <div style={styles.profileControls}>
+              <input
+                style={styles.input}
+                placeholder="Skráðu nafnið hennar"
+                value={childName}
+                onChange={(e) => setChildName(e.target.value)}
+              />
+
+              {deferredPrompt ? (
+                <button type="button" style={styles.installButton} onClick={installApp}>
+                  Setja upp sem app 📱
+                </button>
+              ) : null}
+            </div>
+          </section>
+
+          <section style={styles.heroCard}>
+            <div style={styles.eyebrow}>Rútína</div>
+            <h1 style={styles.title}>Fallegi habit trackerinn þinn</h1>
+            <p style={styles.subtitle}>
+              Fylgstu með morgun- og kvöldrútínu á einfaldan og hlýjan hátt.
+            </p>
+
+            <div style={styles.progressRow}>
+              <div style={styles.progressCircle}>
+                <div style={styles.progressValue}>{progress}%</div>
+                <div style={styles.progressLabel}>í dag</div>
+              </div>
+
+              <div style={styles.progressInfo}>
+                <div style={styles.progressHeadline}>
+                  {completedCount} af {habits.length} lokið
+                </div>
+                <div style={styles.progressText}>Lítil skref skipta máli 💗</div>
+                <div style={styles.rewardPill}>{rewardMessage}</div>
+              </div>
+            </div>
+          </section>
+
+          <section style={styles.addCard}>
+            <h2 style={styles.sectionTitle}>Bæta við vana</h2>
+
             <input
               style={styles.input}
-              placeholder="Skráðu nafnið hennar"
-              value={childName}
-              onChange={(e) => setChildName(e.target.value)}
+              placeholder="Til dæmis: Lesa í 10 mínútur"
+              value={newHabit}
+              onChange={(e) => setNewHabit(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') addHabit();
+              }}
             />
 
-            {deferredPrompt ? (
-              <button type="button" style={styles.installButton} onClick={installApp}>
-                Setja upp sem app 📱
+            <div style={styles.segmentRow}>
+              <button
+                type="button"
+                style={{
+                  ...styles.segmentButton,
+                  ...(selectedTime === 'morgun' ? styles.segmentButtonActive : {}),
+                }}
+                onClick={() => setSelectedTime('morgun')}
+              >
+                <span
+                  style={{
+                    ...styles.segmentText,
+                    ...(selectedTime === 'morgun' ? styles.segmentTextActive : {}),
+                  }}
+                >
+                  Morgun
+                </span>
               </button>
-            ) : null}
-          </div>
-        </section>
 
-        <section style={styles.heroCard}>
-          <div style={styles.eyebrow}>Rútína</div>
-          <h1 style={styles.title}>Fallegi habit trackerinn þinn</h1>
-          <p style={styles.subtitle}>
-            Fylgstu með morgun- og kvöldrútínu á einfaldan og hlýjan hátt.
-          </p>
-
-          <div style={styles.progressRow}>
-            <div style={styles.progressCircle}>
-              <div style={styles.progressValue}>{progress}%</div>
-              <div style={styles.progressLabel}>í dag</div>
+              <button
+                type="button"
+                style={{
+                  ...styles.segmentButton,
+                  ...(selectedTime === 'kvöld' ? styles.segmentButtonActive : {}),
+                }}
+                onClick={() => setSelectedTime('kvöld')}
+              >
+                <span
+                  style={{
+                    ...styles.segmentText,
+                    ...(selectedTime === 'kvöld' ? styles.segmentTextActive : {}),
+                  }}
+                >
+                  Kvöld
+                </span>
+              </button>
             </div>
 
-            <div style={styles.progressInfo}>
-              <div style={styles.progressHeadline}>
-                {completedCount} af {habits.length} lokið
-              </div>
-              <div style={styles.progressText}>Lítil skref skipta máli 💗</div>
-              <div style={styles.rewardPill}>{rewardMessage}</div>
+            <button type="button" style={styles.addButton} onClick={addHabit}>
+              + Bæta við vana
+            </button>
+          </section>
+
+          <section style={styles.sectionBlock}>
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.sectionTitle}>🌤️ Morgunrútína</h2>
+              <div style={styles.countText}>{morningHabits.length} vanar</div>
             </div>
-          </div>
-        </section>
 
-        <section style={styles.addCard}>
-          <h2 style={styles.sectionTitle}>Bæta við vana</h2>
+            <div style={styles.noteCard}>
+              <div style={styles.noteTitle}>Skrifaðu þína morgunrútínu</div>
+              <textarea
+                style={styles.noteInput}
+                placeholder="Til dæmis: Vakna, drekka vatn, gera húðumhirðu, lesa í 10 mínútur..."
+                value={routineNotes.morgun}
+                onChange={(e) => updateRoutineNote('morgun', e.target.value)}
+              />
+            </div>
 
-          <input
-            style={styles.input}
-            placeholder="Til dæmis: Lesa í 10 mínútur"
-            value={newHabit}
-            onChange={(e) => setNewHabit(e.target.value)}
-          />
+            {morningHabits.map(renderHabit)}
+          </section>
 
-          <div style={styles.segmentRow}>
-            <button
-              type="button"
-              style={{
-                ...styles.segmentButton,
-                ...(selectedTime === 'morgun' ? styles.segmentButtonActive : {}),
-              }}
-              onClick={() => setSelectedTime('morgun')}
-            >
-              <span
-                style={{
-                  ...styles.segmentText,
-                  ...(selectedTime === 'morgun' ? styles.segmentTextActive : {}),
-                }}
-              >
-                Morgun
-              </span>
-            </button>
+          <section style={styles.sectionBlock}>
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.sectionTitle}>🌙 Kvöldrútína</h2>
+              <div style={styles.countText}>{eveningHabits.length} vanar</div>
+            </div>
 
-            <button
-              type="button"
-              style={{
-                ...styles.segmentButton,
-                ...(selectedTime === 'kvöld' ? styles.segmentButtonActive : {}),
-              }}
-              onClick={() => setSelectedTime('kvöld')}
-            >
-              <span
-                style={{
-                  ...styles.segmentText,
-                  ...(selectedTime === 'kvöld' ? styles.segmentTextActive : {}),
-                }}
-              >
-                Kvöld
-              </span>
-            </button>
-          </div>
+            <div style={styles.noteCard}>
+              <div style={styles.noteTitle}>Skrifaðu þína kvöldrútínu</div>
+              <textarea
+                style={styles.noteInput}
+                placeholder="Til dæmis: Slökkva á skjám, fara í sturtu, skrifa dagbók, fara snemma að sofa..."
+                value={routineNotes.kvöld}
+                onChange={(e) => updateRoutineNote('kvöld', e.target.value)}
+              />
+            </div>
 
-          <button type="button" style={styles.addButton} onClick={addHabit}>
-            + Bæta við vana
-          </button>
-        </section>
+            {eveningHabits.map(renderHabit)}
+          </section>
+        </div>
 
-        <section style={styles.sectionBlock}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>🌤️ Morgunrútína</h2>
-            <div style={styles.countText}>{morningHabits.length} vanar</div>
-          </div>
-
-          <div style={styles.noteCard}>
-            <div style={styles.noteTitle}>Skrifaðu þína morgunrútínu</div>
-            <textarea
-              style={styles.noteInput}
-              placeholder="Til dæmis: Vakna, drekka vatn, gera húðumhirðu, lesa í 10 mínútur..."
-              value={routineNotes.morgun}
-              onChange={(e) => updateRoutineNote('morgun', e.target.value)}
-            />
-          </div>
-
-          {morningHabits.map(renderHabit)}
-        </section>
-
-        <section style={styles.sectionBlock}>
-          <div style={styles.sectionHeader}>
-            <h2 style={styles.sectionTitle}>🌙 Kvöldrútína</h2>
-            <div style={styles.countText}>{eveningHabits.length} vanar</div>
-          </div>
-
-          <div style={styles.noteCard}>
-            <div style={styles.noteTitle}>Skrifaðu þína kvöldrútínu</div>
-            <textarea
-              style={styles.noteInput}
-              placeholder="Til dæmis: Slökkva á skjám, fara í sturtu, skrifa dagbók, fara snemma að sofa..."
-              value={routineNotes.kvöld}
-              onChange={(e) => updateRoutineNote('kvöld', e.target.value)}
-            />
-          </div>
-
-          {eveningHabits.map(renderHabit)}
-        </section>
-      </div>
-            {showCelebration ? (
+        {showCelebration ? (
           <div style={styles.celebrationOverlay}>
             <div style={styles.celebrationCard}>
               <div style={styles.confettiRow}>🎉 🎀 ✨ 🌈 ✨ 🎉</div>
@@ -329,6 +346,7 @@ export default function App() {
               <div style={styles.celebrationText}>Allir vanar dagsins eru kláraðir.</div>
               <div style={styles.celebrationStars}>{renderRewardStars()}</div>
             </div>
+
             {Array.from({ length: 18 }).map((_, index) => (
               <span
                 key={index}
@@ -344,7 +362,7 @@ export default function App() {
           </div>
         ) : null}
       </div>
-    </div>
+    </>
   );
 }
 
