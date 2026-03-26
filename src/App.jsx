@@ -191,6 +191,13 @@ export default function App() {
           0% { transform: scale(0.9); opacity: 0; }
           100% { transform: scale(1); opacity: 1; }
         }
+
+        @media (max-width: 640px) {
+          .progress-row-fix {
+            grid-template-columns: 1fr !important;
+            justify-items: center;
+          }
+        }
       `}</style>
 
       <div style={styles.page}>
@@ -227,7 +234,7 @@ export default function App() {
               Fylgstu með morgun- og kvöldrútínu á einfaldan og hlýjan hátt.
             </p>
 
-            <div style={styles.progressRow}>
+            <div style={styles.progressRow} className="progress-row-fix">
               <div style={styles.progressCircle}>
                 <div style={styles.progressValue}>{progress}%</div>
                 <div style={styles.progressLabel}>í dag</div>
@@ -457,11 +464,11 @@ const styles = {
     marginBottom: 0,
   },
   progressRow: {
-    display: 'flex',
+    display: 'grid',
+    gridTemplateColumns: '98px minmax(0, 1fr)',
     alignItems: 'center',
-    gap: '14px',
+    gap: '18px',
     marginTop: '20px',
-    flexWrap: 'wrap',
   },
   progressCircle: {
     width: '98px',
@@ -485,8 +492,12 @@ const styles = {
     marginTop: '2px',
   },
   progressInfo: {
-    flex: 1,
-    minWidth: '220px',
+    minWidth: 0,
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+    alignItems: 'center',
+    textAlign: 'center',
   },
   progressHeadline: {
     fontSize: '18px',
@@ -499,7 +510,9 @@ const styles = {
     color: pink.muted,
   },
   rewardPill: {
-    display: 'inline-block',
+    display: 'inline-flex',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginTop: '10px',
     background: '#F7D9E4',
     color: pink.primaryDark,
