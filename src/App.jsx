@@ -196,6 +196,12 @@ export default function App() {
           .progress-row-fix {
             grid-template-columns: 1fr !important;
             justify-items: center;
+            width: 100% !important;
+          }
+
+          .progress-info-fix {
+            align-items: center !important;
+            text-align: center !important;
           }
         }
       `}</style>
@@ -205,7 +211,7 @@ export default function App() {
           <section style={styles.profileCard}>
             <div style={styles.profileTopRow}>
               <div>
-                <div style={styles.profileLabel}>Meistari dagsins</div>
+                <div style={styles.profileLabel}>Lítil meistari dagsins</div>
                 <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
               </div>
               <div style={styles.starBadge}>{renderRewardStars()}</div>
@@ -240,7 +246,7 @@ export default function App() {
                 <div style={styles.progressLabel}>í dag</div>
               </div>
 
-              <div style={styles.progressInfo}>
+              <div style={styles.progressInfo} className="progress-info-fix">
                 <div style={styles.progressHeadline}>
                   {completedCount} af {habits.length} lokið
                 </div>
@@ -465,10 +471,15 @@ const styles = {
   },
   progressRow: {
     display: 'grid',
-    gridTemplateColumns: '98px minmax(0, 1fr)',
+    gridTemplateColumns: '98px auto',
     alignItems: 'center',
-    gap: '18px',
+    justifyContent: 'center',
+    columnGap: '22px',
     marginTop: '20px',
+    width: 'fit-content',
+    maxWidth: '100%',
+    marginLeft: 'auto',
+    marginRight: 'auto',
   },
   progressCircle: {
     width: '98px',
@@ -496,8 +507,8 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'center',
-    alignItems: 'center',
-    textAlign: 'center',
+    alignItems: 'flex-start',
+    textAlign: 'left',
   },
   progressHeadline: {
     fontSize: '18px',
