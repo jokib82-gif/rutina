@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 
 const initialHabits = [];
 
@@ -14,10 +14,58 @@ const pink = {
 };
 
 export default function App() {
-  const [habits, setHabits] = useState(initialHabits);
+  const [habits, setHabits] = useState(() => {
+    const saved = localStorage.getItem('habits');
+    return saved ? JSON.parse(saved) : initialHabits;
+  });
+
   const [newHabit, setNewHabit] = useState('');
   const [selectedTime, setSelectedTime] = useState('morgun');
-  const [routineNotes, setRoutineNotes] = useState({ morgun: '', kvöld: '' });
+  const [childName, setChildName] = useState(() => localStorage.getItem('childName') || 'Stjarnan mín');
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+
+  const [routineNotes, setRoutineNotes] = useState(() => {
+    const saved = localStorage.getItem('routineNotes');
+    return saved ? JSON.parse(saved) : { morgun: '', kvöld: '' };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('habits', JSON.stringify(habits));
+  }, [habits]);
+
+  useEffect(() => {
+    localStorage.setItem('routineNotes', JSON.stringify(routineNotes));
+  }, [routineNotes]);
+
+  useEffect(() => {
+    localStorage.setItem('childName', childName);
+  }, [childName]);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (event) => {
+      event.preventDefault();
+      setDeferredPrompt(event);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+  }, []);
+
+    useEffect(() => {
+    if (habits.length > 0 && completedCount === habits.length) {
+      setShowCelebration(true);
+      const timer = window.setTimeout(() => setShowCelebration(false), 4200);
+      return () => window.clearTimeout(timer);
+    }
+  }, [completedCount, habits.length]);
+
+  const installApp = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+  };
 
   const morningHabits = useMemo(
     () => habits.filter((habit) => habit.time === 'morgun'),
@@ -78,6 +126,20 @@ export default function App() {
     }));
   };
 
+  const rewardMessage =
+    progress === 100
+      ? 'Þú kláraðir allt í dag! 🌈'
+      : progress >= 75
+      ? 'Frábær vinna! Þú ert næstum búin 💖'
+      : progress >= 40
+      ? 'Vel gert! Haltu áfram ✨'
+      : 'Byrjaðu á einu litlu skrefi 💗';
+
+  const renderRewardStars = () => {
+    const stars = Math.min(5, Math.max(1, Math.ceil(progress / 20) || 1));
+    return '⭐'.repeat(stars);
+  };
+
   const renderHabit = (habit) => (
     <div
       key={habit.id}
@@ -120,6 +182,31 @@ export default function App() {
   return (
     <div style={styles.page}>
       <div style={styles.wrapper}>
+        <section style={styles.profileCard}>
+          <div style={styles.profileTopRow}>
+            <div>
+              <div style={styles.profileLabel}>Lítil meistari dagsins</div>
+              <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
+            </div>
+            <div style={styles.starBadge}>{renderRewardStars()}</div>
+          </div>
+
+          <div style={styles.profileControls}>
+            <input
+              style={styles.input}
+              placeholder="Skráðu nafnið hennar"
+              value={childName}
+              onChange={(e) => setChildName(e.target.value)}
+            />
+
+            {deferredPrompt ? (
+              <button type="button" style={styles.installButton} onClick={installApp}>
+                Setja upp sem app 📱
+              </button>
+            ) : null}
+          </div>
+        </section>
+
         <section style={styles.heroCard}>
           <div style={styles.eyebrow}>Rútína</div>
           <h1 style={styles.title}>Fallegi habit trackerinn þinn</h1>
@@ -138,6 +225,7 @@ export default function App() {
                 {completedCount} af {habits.length} lokið
               </div>
               <div style={styles.progressText}>Lítil skref skipta máli 💗</div>
+              <div style={styles.rewardPill}>{rewardMessage}</div>
             </div>
           </div>
         </section>
@@ -233,6 +321,29 @@ export default function App() {
           {eveningHabits.map(renderHabit)}
         </section>
       </div>
+            {showCelebration ? (
+          <div style={styles.celebrationOverlay}>
+            <div style={styles.celebrationCard}>
+              <div style={styles.confettiRow}>🎉 🎀 ✨ 🌈 ✨ 🎉</div>
+              <div style={styles.celebrationTitle}>Vel gert, {childName || 'stjarna'}!</div>
+              <div style={styles.celebrationText}>Allir vanar dagsins eru kláraðir.</div>
+              <div style={styles.celebrationStars}>{renderRewardStars()}</div>
+            </div>
+            {Array.from({ length: 18 }).map((_, index) => (
+              <span
+                key={index}
+                style={{
+                  ...styles.confettiPiece,
+                  left: `${5 + index * 5}%`,
+                  animationDelay: `${(index % 6) * 0.15}s`,
+                }}
+              >
+                {index % 3 === 0 ? '🎉' : index % 3 === 1 ? '✨' : '💖'}
+              </span>
+            ))}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -246,10 +357,60 @@ const styles = {
     color: pink.text,
   },
   wrapper: {
+    position: 'relative',
     maxWidth: '860px',
     margin: '0 auto',
     display: 'grid',
     gap: '18px',
+  },
+  profileCard: {
+    background: 'linear-gradient(135deg, #FFF7FA 0%, #FBEAF1 100%)',
+    borderRadius: '28px',
+    padding: '20px',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+  },
+  profileTopRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: '12px',
+    flexWrap: 'wrap',
+  },
+  profileLabel: {
+    fontSize: '13px',
+    color: pink.primaryDark,
+    fontWeight: 700,
+    marginBottom: '6px',
+  },
+  profileTitle: {
+    margin: 0,
+    fontSize: '26px',
+    fontWeight: 800,
+    color: pink.text,
+  },
+  profileControls: {
+    display: 'grid',
+    gap: '12px',
+    marginTop: '16px',
+  },
+  starBadge: {
+    background: pink.white,
+    color: pink.primaryDark,
+    borderRadius: '999px',
+    padding: '10px 14px',
+    fontSize: '22px',
+    boxShadow: '0 4px 14px rgba(0,0,0,0.05)',
+  },
+  installButton: {
+    width: '100%',
+    background: '#F3C7D5',
+    borderRadius: '18px',
+    padding: '14px',
+    color: pink.primaryDark,
+    fontSize: '15px',
+    fontWeight: 800,
+    border: 'none',
+    cursor: 'pointer',
   },
   heroCard: {
     background: pink.card,
@@ -318,6 +479,16 @@ const styles = {
   progressText: {
     fontSize: '14px',
     color: pink.muted,
+  },
+  rewardPill: {
+    display: 'inline-block',
+    marginTop: '10px',
+    background: '#F7D9E4',
+    color: pink.primaryDark,
+    padding: '8px 12px',
+    borderRadius: '999px',
+    fontSize: '13px',
+    fontWeight: 700,
   },
   addCard: {
     background: pink.card,
@@ -499,5 +670,50 @@ const styles = {
     border: `1px solid ${pink.soft}`,
     outline: 'none',
     fontFamily: 'inherit',
+  },
+  celebrationOverlay: {
+    position: 'fixed',
+    inset: 0,
+    background: 'rgba(109, 75, 87, 0.18)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    zIndex: 50,
+    pointerEvents: 'none',
+  },
+  celebrationCard: {
+    background: pink.white,
+    borderRadius: '28px',
+    padding: '24px',
+    textAlign: 'center',
+    boxShadow: '0 18px 40px rgba(0,0,0,0.12)',
+    maxWidth: '320px',
+    zIndex: 2,
+    animation: 'popIn 0.35s ease-out',
+  },
+  confettiRow: {
+    fontSize: '26px',
+    marginBottom: '10px',
+  },
+  celebrationTitle: {
+    fontSize: '24px',
+    fontWeight: 800,
+    color: pink.text,
+  },
+  celebrationText: {
+    marginTop: '8px',
+    fontSize: '15px',
+    color: pink.muted,
+  },
+  celebrationStars: {
+    marginTop: '14px',
+    fontSize: '28px',
+  },
+  confettiPiece: {
+    position: 'absolute',
+    top: '-20px',
+    fontSize: '24px',
+    animation: 'fall 2.8s linear infinite',
   },
 };
