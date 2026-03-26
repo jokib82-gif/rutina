@@ -211,7 +211,7 @@ export default function App() {
           <section style={styles.profileCard}>
             <div style={styles.profileTopRow}>
               <div>
-                <div style={styles.profileLabel}>Lítil meistari dagsins</div>
+                <div style={styles.profileLabel}>Meistari dagsins</div>
                 <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
               </div>
               <div style={styles.starBadge}>{renderRewardStars()}</div>
@@ -471,9 +471,8 @@ const styles = {
   },
   progressRow: {
     display: 'grid',
-    gridTemplateColumns: '98px 1fr',
+    gridTemplateColumns: '120px 1fr',
     alignItems: 'center',
-    gap: '16px',
     marginTop: '20px',
   },
   progressCircle: {
@@ -498,13 +497,11 @@ const styles = {
     marginTop: '2px',
   },
   progressInfo: {
-    minWidth: 0,
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'center',
-    alignItems: 'flex-start',
-    textAlign: 'left',
-    paddingLeft: '6px',
+    alignItems: 'center',
+    textAlign: 'center',
+    marginRight: '120px',
   },
   progressHeadline: {
     fontSize: '18px',
