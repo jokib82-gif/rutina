@@ -230,7 +230,7 @@ export default function App() {
           <section style={styles.profileCard}>
             <div style={styles.profileTopRow}>
               <div>
-                <div style={styles.profileLabel}>Lítil meistari dagsins</div>
+                <div style={styles.profileLabel}>Meistari dagsins</div>
                 <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
               </div>
               <div style={styles.starBadge}>{renderRewardStars()}</div>
