@@ -24,9 +24,21 @@ export default function App() {
   const [childName, setChildName] = useState(() => localStorage.getItem('childName') || 'Stjarnan mín');
   const [showCelebration, setShowCelebration] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const daysOfWeek = ['Mánudagur', 'Þriðjudagur', 'Miðvikudagur', 'Fimmtudagur', 'Föstudagur', 'Laugardagur', 'Sunnudagur'];
+
+  const createEmptyWeeklyNotes = () =>
+    daysOfWeek.reduce(
+      (acc, day) => ({
+        ...acc,
+        [day]: { morgun: '', kvöld: '' },
+      }),
+      {}
+    );
+
+  const [selectedDay, setSelectedDay] = useState(() => localStorage.getItem('selectedDay') || 'Mánudagur');
   const [routineNotes, setRoutineNotes] = useState(() => {
     const saved = localStorage.getItem('routineNotes');
-    return saved ? JSON.parse(saved) : { morgun: '', kvöld: '' };
+    return saved ? JSON.parse(saved) : createEmptyWeeklyNotes();
   });
 
   useEffect(() => {
@@ -40,6 +52,10 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem('childName', childName);
   }, [childName]);
+
+  useEffect(() => {
+    localStorage.setItem('selectedDay', selectedDay);
+  }, [selectedDay]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (event) => {
@@ -114,7 +130,10 @@ export default function App() {
   const updateRoutineNote = (time, text) => {
     setRoutineNotes((current) => ({
       ...current,
-      [time]: text,
+      [selectedDay]: {
+        ...(current[selectedDay] || { morgun: '', kvöld: '' }),
+        [time]: text,
+      },
     }));
   };
 
@@ -211,7 +230,7 @@ export default function App() {
           <section style={styles.profileCard}>
             <div style={styles.profileTopRow}>
               <div>
-                <div style={styles.profileLabel}>Meistari dagsins</div>
+                <div style={styles.profileLabel}>Lítil meistari dagsins</div>
                 <h2 style={styles.profileTitle}>{childName || 'Stjarnan mín'}</h2>
               </div>
               <div style={styles.starBadge}>{renderRewardStars()}</div>
@@ -253,6 +272,29 @@ export default function App() {
                 <div style={styles.progressText}>Lítil skref skipta máli 💗</div>
                 <div style={styles.rewardPill}>{rewardMessage}</div>
               </div>
+            </div>
+          </section>
+
+          <section style={styles.dayPickerCard}>
+            <div style={styles.sectionHeader}>
+              <h2 style={styles.sectionTitle}>Veldu dag</h2>
+              <div style={styles.countText}>{selectedDay}</div>
+            </div>
+
+            <div style={styles.daysGrid}>
+              {daysOfWeek.map((day) => (
+                <button
+                  key={day}
+                  type="button"
+                  style={{
+                    ...styles.dayButton,
+                    ...(selectedDay === day ? styles.dayButtonActive : {}),
+                  }}
+                  onClick={() => setSelectedDay(day)}
+                >
+                  {day}
+                </button>
+              ))}
             </div>
           </section>
 
@@ -323,7 +365,7 @@ export default function App() {
               <textarea
                 style={styles.noteInput}
                 placeholder="Til dæmis: Vakna, drekka vatn, gera húðumhirðu, lesa í 10 mínútur..."
-                value={routineNotes.morgun}
+                value={(routineNotes[selectedDay] || { morgun: '', kvöld: '' }).morgun}
                 onChange={(e) => updateRoutineNote('morgun', e.target.value)}
               />
             </div>
@@ -342,7 +384,7 @@ export default function App() {
               <textarea
                 style={styles.noteInput}
                 placeholder="Til dæmis: Slökkva á skjám, fara í sturtu, skrifa dagbók, fara snemma að sofa..."
-                value={routineNotes.kvöld}
+                value={(routineNotes[selectedDay] || { morgun: '', kvöld: '' }).kvöld}
                 onChange={(e) => updateRoutineNote('kvöld', e.target.value)}
               />
             </div>
@@ -540,6 +582,31 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     flexWrap: 'wrap',
+  },
+  dayPickerCard: {
+    background: pink.card,
+    borderRadius: '24px',
+    padding: '18px',
+  },
+  daysGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+    gap: '10px',
+    marginTop: '14px',
+  },
+  dayButton: {
+    background: pink.soft,
+    color: pink.primaryDark,
+    borderRadius: '14px',
+    padding: '12px 10px',
+    border: 'none',
+    cursor: 'pointer',
+    fontWeight: 700,
+    fontSize: '14px',
+  },
+  dayButtonActive: {
+    background: pink.primaryDark,
+    color: pink.white,
   },
   sectionTitle: {
     margin: 0,
